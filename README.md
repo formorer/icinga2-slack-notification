@@ -25,7 +25,7 @@ Message formatting
 ------------------
 
 You can add your own emojis to the various servicestates. Just Edit
-Format/<servicestates>. See <https://github.com/iamcal/emoji-data> for a 
+Format/SERVICESTATE. See <https://github.com/iamcal/emoji-data> for a 
 list of supported emojis.
 
 TODO
