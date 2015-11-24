@@ -1,0 +1,77 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use WebService::Slack::WebApi;
+use Env;
+use Config::IniFiles;
+use Switch;
+
+
+#    "NOTIFICATIONTYPE" = "$notification.type$"
+#    "SERVICEDESC" = "$service.name$"
+#    "HOSTALIAS" = "$host.display_name$",
+#    "HOSTNAME" = "$host.name$",
+#    "HOSTADDRESS" = "$address$",
+#    "SERVICESTATE" = "$service.state$",
+#    "LONGDATETIME" = "$icinga.long_date_time$",
+#    "SERVICEOUTPUT" = "$service.output$",
+#    "NOTIFICATIONAUTHORNAME" = "$notification.author$",
+#    "NOTIFICATIONCOMMENT" = "$notification.comment$",
+#    "HOSTDISPLAYNAME" = "$host.display_name$",
+#    "SERVICEDISPLAYNAME" = "$service.display_name$",
+
+# this uses the webapi. use https://api.slack.com/web to get a token
+
+my $cfg_file = shift;
+if (! -f $cfg_file) {
+    print STDERR "No configuration given or file not found.\nUsage: slack-notification <config.ini>\n";
+    exit 1;
+}
+
+my $cfg = Config::IniFiles->new( -file => $cfg_file );
+
+if (! defined($cfg->val('Authentication', 'Token'))) {
+    print STDERR "Token not defined in configfile";
+    exit 1;
+}
+
+my $servicestate = $ENV{SERVICESTATE};
+
+my $icon = '';
+switch ($servicestate) {
+    case "CRITICAL" { 
+        $icon = defined($cfg->val('Format', 'CRITICAL')) ? 
+            $cfg->val('Format', 'CRITICAL') : ''; }
+    case "WARNING" {
+        $icon = defined($cfg->val('Format', 'WARNING')) ?
+            $cfg->val('Format', 'WARNING') : ''; }
+    case "OK" {
+        $icon = defined($cfg->val('Format', 'OK')) ?
+            $cfg->val('Format', 'WARNING') : ''; }
+    case "UNKNOWN" {
+        $icon = defined($cfg->val('Format', 'UNKNOWN')) ?
+            $cfg->val('Format', 'WARNING') : ''; }
+
+}
+
+my $icinga_hostname = $cfg->val('General', 'WebHostname');
+
+my $slack = WebService::Slack::WebApi->new(token => $cfg->val('Authentication', 'Token'));
+
+my $posted_message = $slack->chat->post_message(
+    channel => $cfg->val('General', 'Channel') || '#general',
+    text => sprintf (
+    '%s HOST: <http://%s/icingaweb2/monitoring/host/services?host=%s|%s>   SERVICE: <http://%s/icingaweb2/monitoring/service/show?host=%s&service=%s|%s>  STATE: %s',
+    $icon,
+    $icinga_hostname,
+    $ENV{HOSTNAME},
+    $ENV{HOSTALIAS},
+    $icinga_hostname,
+    $ENV{HOSTNAME},
+    $ENV{SERVICEDESC},
+    $ENV{SERVICEDISPLAYNAME},
+    $servicestate ),
+    username => 'icinga'
+);
+
