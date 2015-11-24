@@ -5,6 +5,13 @@ This is my perl implemenation of a slack service notification handler
 for icinga2. It was heavily inspired by
 <https://github.com/jjethwa/icinga2-slack-notification/blob/master/slack-service-notification.sh>.
 
+Dependencys
+-----------
+
+- WebService::Slack::WebApi
+- Config::IniFiles
+- Switch
+
 Installation and configuration
 ------------------------------
 
